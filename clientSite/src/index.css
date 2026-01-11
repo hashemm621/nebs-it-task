@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: light --default;
+}
+
+@plugin "daisyui/theme" {
+  name: "light";
+  default: true;
+  /* primary button color */
+  --color-primary: #F95524;
+  /* navigate button color */
+  --color-secondary: #232948;
+  /* table text */
+  --color-accent:#1A1F3C;
+  /* subtitle */
+  --color-subtitle:#595F7A
+}
+
+body{
+  font-family: "Inter", sans-serif;
+
+}
