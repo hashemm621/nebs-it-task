@@ -1,13 +1,24 @@
 import React from "react";
 import { useForm } from "react-hook-form";
-import { ChevronLeft, Calendar, Upload, X, Paperclip, Send } from "lucide-react";
+import {
+  ChevronLeft,
+  Calendar,
+  Upload,
+  X,
+  Paperclip,
+  Send,
+} from "lucide-react";
 import { useNavigate } from "react-router";
 import { imageUpload } from "../../utils/imageBB";
 import toast from "react-hot-toast";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import useAxios from "../../hooks/useAxios";
 
 const NoticeBoard = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const axiosInstance = useAxios();
   const {
     register,
     handleSubmit,
@@ -17,12 +28,35 @@ const NoticeBoard = () => {
     setValue,
   } = useForm();
 
-    const selectedImage = watch("image");
+  const selectedImage = watch("image");
 
-  const onSubmit = async(data) => {
+  const mutation = useMutation({
+    mutationFn: async newNotice => {
+      const res = await axiosInstance.post("/notices", newNotice);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["notices"]);
+      toast.success("Notice processed successfully!");
+      reset();
+    },
+    onError: err => {
+      toast.error(err.response?.data?.message || "Something went wrong");
+    },
+  });
 
-    const {date,empId,empName,empPosition,image,noticeBody,target,title,type} = data;
-    console.log({date,empId,empName,empPosition,image,noticeBody,target,title,type});
+  const handleAction = async (data, status) => {
+    const {
+      date,
+      empId,
+      empName,
+      empPosition,
+      image,
+      noticeBody,
+      target,
+      title,
+      type,
+    } = data;
 
     if (!image || image.length === 0) {
       return toast.error("Please upload an image first");
@@ -30,78 +64,101 @@ const NoticeBoard = () => {
 
     const imageFile = image[0];
 
-    try{
-        const imageUrl = await imageUpload(imageFile);
-        console.log("uploaded imageUrl",imageUrl);
+    try {
+      const imageUrl = await imageUpload(imageFile);
 
+      const finalNoticeData = {
+        publishDate: date,
+        employeeId: empId,
+        employeeName: empName,
+        employeePosition: empPosition,
+        image: imageUrl,
+        noticeDescription: noticeBody,
+        targetAudience: target,
+        noticeTitle: title,
+        noticeType: type,
+        status: status,
+      };
+      mutation.mutate(finalNoticeData);
 
-        toast.success("Notice Published Successfully!");
-    reset();
-    }catch(err){
-        console.log(err);
-        toast.error(err.message || "Something went wrong");
+      toast.success("Notice Published Successfully!");
+      reset();
+    } catch (err) {
+      console.log(err);
+      toast.error(err.message || "Something went wrong");
     }
   };
 
   const handleCancel = () => {
-  Swal.fire({
-    title: "Are you sure?",
-    text: "Your unsaved changes will be lost!",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#F95524", 
-    cancelButtonColor: "#6B7280", 
-    confirmButtonText: "Yes, discard it!",
-    cancelButtonText: "No, stay here",
-    customClass: {
-      popup: 'rounded-2xl', 
-      confirmButton: 'rounded-full px-6 py-2',
-      cancelButton: 'rounded-full px-6 py-2'
-    }
-  }).then((result) => {
-    if (result.isConfirmed) {
-      navigate(-1); 
-    }
-  });
-};
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Your unsaved changes will be lost!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#F95524",
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Yes, discard it!",
+      cancelButtonText: "No, stay here",
+      customClass: {
+        popup: "rounded-2xl",
+        confirmButton: "rounded-full px-6 py-2",
+        cancelButton: "rounded-full px-6 py-2",
+      },
+    }).then(result => {
+      if (result.isConfirmed) {
+        navigate(-1);
+      }
+    });
+  };
 
   return (
     <div className=" w-full pb-10">
       {/* Header with Back Button */}
       <div className="flex items-center gap-4 mb-6">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all"
-        >
-          <ChevronLeft size={20} className="text-secondary" />
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all">
+          <ChevronLeft
+            size={20}
+            className="text-secondary"
+          />
         </button>
-        <h1 className="text-lg md:text-xl font-bold text-accent">Create a Notice</h1>
+        <h1 className="text-lg md:text-xl font-bold text-accent">
+          Create a Notice
+        </h1>
       </div>
 
       {/* Main Form Card */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="p-4 bg-blue-100/30 border-b border-gray-100">
-          <p className="font-bold text-accent">Please fill in the details below</p>
+          <p className="font-bold text-accent">
+            Please fill in the details below
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 md:p-8 space-y-6">
-          
+        <form className="p-6 md:p-8 space-y-6">
           {/* Target Department/Individual */}
           <div className="form-control w-full bg-blue-100/30 p-4 rounded-lg">
             <label className="label">
               <span className="label-text font-bold text-accent mb-2">
-                <span className="text-error">*</span> Target Department(s) or Individual
+                <span className="text-error">*</span> Target Department(s) or
+                Individual
               </span>
             </label>
-            <select 
+            <select
               {...register("target", { required: "Target is required" })}
-              className={`select bg-white text-[#0EA5E9] select-bordered w-full focus:border-primary focus:outline-none ${errors.target ? 'border-error' : ''}`}
-            >
+              className={`select bg-white text-[#0EA5E9] select-bordered w-full focus:border-primary focus:outline-none ${
+                errors.target ? "border-error" : ""
+              }`}>
               <option value="Individual">Individual</option>
               <option value="All Department">All Department</option>
               <option value="Finance">Finance</option>
             </select>
-            {errors.target && <span className="text-error text-xs mt-1">{errors.target.message}</span>}
+            {errors.target && (
+              <span className="text-error text-xs mt-1">
+                {errors.target.message}
+              </span>
+            )}
           </div>
 
           {/* Notice Title */}
@@ -111,22 +168,32 @@ const NoticeBoard = () => {
                 <span className="text-error">*</span> Notice Title
               </span>
             </label>
-            <input 
+            <input
               type="text"
               placeholder="Write the Title of Notice"
               {...register("title", { required: "Title is required" })}
-              className={`input input-bordered w-full focus:border-primary focus:outline-none ${errors.title ? 'border-error' : ''}`}
+              className={`input input-bordered w-full focus:border-primary focus:outline-none ${
+                errors.title ? "border-error" : ""
+              }`}
             />
-            {errors.title && <span className="text-error text-xs mt-1">{errors.title.message}</span>}
+            {errors.title && (
+              <span className="text-error text-xs mt-1">
+                {errors.title.message}
+              </span>
+            )}
           </div>
 
           {/* Select ID, Name, Position (Responsive Grid) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="form-control w-full">
               <label className="label">
-                <span className="label-text mb-2 font-bold text-accent"><span className="text-error">*</span> Select Employee ID</span>
+                <span className="label-text mb-2 font-bold text-accent">
+                  <span className="text-error">*</span> Select Employee ID
+                </span>
               </label>
-              <select {...register("empId",{required:'Employee ID is required'})} className="select select-bordered w-full focus:border-primary">
+              <select
+                {...register("empId", { required: "Employee ID is required" })}
+                className="select select-bordered w-full focus:border-primary">
                 <option value="">Select employee designation</option>
                 <option value="EMP001">EMP001</option>
               </select>
@@ -134,16 +201,34 @@ const NoticeBoard = () => {
 
             <div className="form-control w-full">
               <label className="label">
-                <span className="label-text font-bold mb-2 text-accent"><span className="text-error">*</span> Employee Name</span>
+                <span className="label-text font-bold mb-2 text-accent">
+                  <span className="text-error">*</span> Employee Name
+                </span>
               </label>
-              <input type="text" {...register("empName",{required:'Employee Name is required'})} placeholder="Enter employee full name" className="input input-bordered w-full focus:border-primary" />
+              <input
+                type="text"
+                {...register("empName", {
+                  required: "Employee Name is required",
+                })}
+                placeholder="Enter employee full name"
+                className="input input-bordered w-full focus:border-primary"
+              />
             </div>
 
             <div className="form-control w-full">
               <label className="label">
-                <span className="label-text mb-2 font-bold text-accent"><span className="text-error">*</span> Position</span>
+                <span className="label-text mb-2 font-bold text-accent">
+                  <span className="text-error">*</span> Position
+                </span>
               </label>
-              <input {...register("empPosition",{required:'Employee Position is required'})} type="text" placeholder="Select employee department" className="input input-bordered w-full focus:border-primary" />
+              <input
+                {...register("empPosition", {
+                  required: "Employee Position is required",
+                })}
+                type="text"
+                placeholder="Select employee department"
+                className="input input-bordered w-full focus:border-primary"
+              />
             </div>
           </div>
 
@@ -151,9 +236,13 @@ const NoticeBoard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="form-control w-full">
               <label className="label">
-                <span className="label-text mb-2 font-bold text-accent"><span className="text-error">*</span> Notice Type</span>
+                <span className="label-text mb-2 font-bold text-accent">
+                  <span className="text-error">*</span> Notice Type
+                </span>
               </label>
-              <select {...register("type", { required: "Notice Type is required" })} className="select select-bordered w-full focus:border-primary">
+              <select
+                {...register("type", { required: "Notice Type is required" })}
+                className="select select-bordered w-full focus:border-primary">
                 <option value="">Select Notice Type</option>
                 <option value="warning">Warning / Disciplinary</option>
                 <option value="performance">Performance Improvement</option>
@@ -167,46 +256,70 @@ const NoticeBoard = () => {
 
             <div className="form-control w-full relative">
               <label className="label">
-                <span className="label-text mb-2 font-bold text-accent"><span className="text-error">*</span> Publish Date</span>
+                <span className="label-text mb-2 font-bold text-accent">
+                  <span className="text-error">*</span> Publish Date
+                </span>
               </label>
-              <input type="date" {...register("date",{required:'Publish Date is required'})} className="input input-bordered w-full focus:border-primary" />
+              <input
+                type="date"
+                {...register("date", { required: "Publish Date is required" })}
+                className="input input-bordered w-full focus:border-primary"
+              />
             </div>
           </div>
 
           {/* Notice Body */}
           <div className="form-control w-full">
             <label className="label">
-              <span className="label-text mb-2 font-bold text-accent">Notice Body</span>
+              <span className="label-text mb-2 font-bold text-accent">
+                Notice Body
+              </span>
             </label>
-            <textarea 
+            <textarea
               placeholder="Write the details about notice"
               className="textarea textarea-bordered h-32 w-full focus:border-primary text-base"
-              {...register("noticeBody")}
-            ></textarea>
+              {...register("noticeBody")}></textarea>
           </div>
 
           {/* File Upload Section */}
           <div className="space-y-4">
-            <label className="label-text font-bold text-accent block">Upload Attachments (optional)</label>
+            <label className="label-text font-bold text-accent block">
+              Upload Attachments (optional)
+            </label>
             <div className="border-2 border-dashed border-green-300 rounded-xl p-8 flex flex-col items-center justify-center bg-green-50/10 hover:bg-green-50/30 transition-all cursor-pointer relative">
-              <Upload className="text-success mb-2" size={32} />
-              <p className="text-sm font-medium"><span className="text-success underline">Upload</span> nominee profile image or drag and drop.</p>
-              <p className="text-xs text-paragraph mt-1">Accepted File Type: jpg, png</p>
-              <input type="file" multiple {...register("image")} className="absolute inset-0 opacity-0 cursor-pointer" />
+              <Upload
+                className="text-success mb-2"
+                size={32}
+              />
+              <p className="text-sm font-medium">
+                <span className="text-success underline">Upload</span> nominee
+                profile image or drag and drop.
+              </p>
+              <p className="text-xs text-paragraph mt-1">
+                Accepted File Type: jpg, png
+              </p>
+              <input
+                type="file"
+                multiple
+                {...register("image")}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
             </div>
 
             {/* Attached File Preview */}
             {selectedImage && selectedImage.length > 0 && (
               <div className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg w-fit animate-in fade-in duration-300">
-                <Paperclip size={16} className="text-gray-500" />
+                <Paperclip
+                  size={16}
+                  className="text-gray-500"
+                />
                 <span className="text-sm text-accent max-w-50 truncate">
                   {selectedImage[0].name}
                 </span>
-                <button 
+                <button
                   type="button"
-                  onClick={() => setValue("image", null)} 
-                  className="text-error hover:scale-110 transition-transform ml-2"
-                >
+                  onClick={() => setValue("image", null)}
+                  className="text-error hover:scale-110 transition-transform ml-2">
                   <X size={16} />
                 </button>
               </div>
@@ -215,13 +328,28 @@ const NoticeBoard = () => {
 
           {/* Form Actions */}
           <div className="flex flex-col sm:flex-row justify-end gap-4 pt-6 mt-6 border-t border-gray-100">
-            <button onClick={handleCancel} type="button" className="btn btn-outline rounded-[56px] border-gray-300 text-accent px-10 hover:bg-gray-50">Cancel</button>
-            <button type="button" className="btn btn-outline rounded-[56px] border-blue-400 text-blue-500 px-10 hover:bg-blue-50">Save as Draft</button>
-            <button type="submit" className="btn btn-primary rounded-[56px] px-10 gap-2 shadow-lg shadow-orange-200">
-              <Send size={18} /> Publish Notice
+            <button
+              onClick={handleCancel}
+              type="button"
+              className="btn btn-outline rounded-[56px] border-gray-300 text-accent px-10 hover:bg-gray-50">
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={mutation.isPending}
+              onClick={handleSubmit(data => handleAction(data, "draft"))}
+              className="btn btn-outline rounded-[56px] border-blue-400 text-blue-500 px-10 hover:bg-blue-50">
+              {mutation.isPending ? "Saving..." : "Save as Draft"}
+            </button>
+            <button
+              type="button"
+              disabled={mutation.isPending}
+              onClick={handleSubmit(data => handleAction(data, "published"))}
+              className="btn btn-primary rounded-[56px] px-10 gap-2 shadow-lg shadow-orange-200">
+              <Send size={18} />{" "}
+              {mutation.isPending ? "Publishing..." : "Publish Notice"}
             </button>
           </div>
-
         </form>
       </div>
     </div>
