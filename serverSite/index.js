@@ -6,11 +6,9 @@ const port = process.env.PORT || 3000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 app.use(express.json());
-app.use(
-  cors({
-    origin: ["http://localhost:5173"],
-  })
-);
+app.use(cors({
+  origin:["http://localhost:5173","https://profound-dragon-cef170.netlify.app"]
+}))
 
 const uri = process.env.URI;
 const client = new MongoClient(uri, {
