@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   ChevronLeft,
@@ -19,6 +19,8 @@ const NoticeBoard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const axiosInstance = useAxios();
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+
   const {
     register,
     handleSubmit,
@@ -37,8 +39,8 @@ const NoticeBoard = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["notices"]);
-      toast.success("Notice processed successfully!");
-      reset();
+      setIsModalOpen(true);
+      
     },
     onError: err => {
       toast.error(err.response?.data?.message || "Something went wrong");
@@ -80,9 +82,6 @@ const NoticeBoard = () => {
         status: status,
       };
       mutation.mutate(finalNoticeData);
-
-      toast.success("Notice Published Successfully!");
-      reset();
     } catch (err) {
       console.log(err);
       toast.error(err.message || "Something went wrong");
@@ -196,6 +195,10 @@ const NoticeBoard = () => {
                 className="select select-bordered w-full focus:border-primary">
                 <option value="">Select employee designation</option>
                 <option value="EMP001">EMP001</option>
+                <option value="EMP002">EMP002</option>
+                <option value="EMP003">EMP003</option>
+                <option value="EMP004">EMP004</option>
+                <option value="EMP005">EMP005</option>
               </select>
             </div>
 
@@ -352,6 +355,58 @@ const NoticeBoard = () => {
           </div>
         </form>
       </div>
+
+      {/* Success Modal */}
+{isModalOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="bg-white rounded-4xl w-full max-w-lg p-8 md:p-12 shadow-2xl animate-in zoom-in duration-300">
+      <div className="flex flex-col items-center text-center">
+        
+        {/* Success Icon */}
+        <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-green-100">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+
+        {/* Text Content */}
+        <h2 className="text-2xl md:text-3xl font-bold text-accent mb-4">
+          Notice Published Successfully
+        </h2>
+        <p className="text-paragraph text-sm md:text-base mb-8 max-w-sm">
+          Your notice has been published and is now visible to all selected departments.
+        </p>
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap justify-center gap-3 w-full">
+          <button 
+            onClick={() => navigate("/dashboard")} 
+            className="px-6 py-2.5 border border-blue-400 text-blue-500 rounded-full font-semibold hover:bg-blue-50 transition-all text-sm"
+          >
+            View Notice
+          </button>
+          
+          <button 
+            onClick={() => {
+              setIsModalOpen(false);
+              reset(); 
+            }}
+            className="px-6 py-2.5 border border-orange-400 text-orange-500 rounded-full font-semibold hover:bg-orange-50 transition-all text-sm"
+          >
+            + Create Another
+          </button>
+          
+          <button 
+            onClick={() => setIsModalOpen(false)}
+            className="px-6 py-2.5 border border-gray-300 text-gray-600 rounded-full font-semibold hover:bg-gray-50 transition-all text-sm"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };
