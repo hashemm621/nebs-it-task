@@ -1,7 +1,7 @@
 import { createBrowserRouter } from "react-router";
 import RootLayout from "../Layouts/RootLayout";
 import ErrorPage from "../pages/errorPage/errorpage";
-import Notices from "../pages/errorPage/Notices/Notices";
+import Notices from "../pages/Notices/Notices";
 import PlaceholderPage from "../componets/PlaceholderPage";
 import NoticeBoard from "../pages/addNotice/NoticeBoard";
 
