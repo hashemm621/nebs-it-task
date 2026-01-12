@@ -5,7 +5,7 @@ A modern, full-stack Notice Management Dashboard designed for efficient communic
 ---
 
 ## 🌐 Submission Links
-* **Live Frontend:** 
+* **Live Frontend:** https://nebs-it-task-client.vercel.app/
 * **Live Backend:** https://nebs-it-task.vercel.app/
 * **GitHub Repository:** https://github.com/hashemm621/nebs-it-task
 
